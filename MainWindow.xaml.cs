@@ -11,6 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
 using Microsoft.Web.WebView2.Core;
+using VVPlayer.Util;
 using Clipboard = System.Windows.Clipboard;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using Label = System.Windows.Controls.Label;
@@ -42,7 +43,6 @@ namespace VVPlayer
                 .Replace("@TEXT@", search)
                 .Replace("%26", "&");
             WebViewSearch.Source = new Uri(url);
-            WindowState = WindowState.Maximized;
             TabControl.SelectedIndex = 0;
         }
 
@@ -64,7 +64,6 @@ namespace VVPlayer
             {
                 case "播放":
                     PlayNow();
-                    ListViewPlayList.Items.RemoveAt(ListViewPlayList.SelectedIndex);
                     break;
                 case "删除":
                     ListViewPlayList.Items.RemoveAt(ListViewPlayList.SelectedIndex);
@@ -78,15 +77,28 @@ namespace VVPlayer
                 case "清空":
                     ListViewPlayList.Items.Clear();
                     break;
-                case "Copy":
-                    Clipboard.SetText(TextBoxDownload.SelectedText);
+            }
+        }
+
+        private void MenuItem_OnClick2(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as MenuItem;
+            switch (menuItem?.Header.ToString())
+            {
+                case "下载设置":
+                    var dlSettingWin = new DownloadSettingWindow { Owner = this };
+                    dlSettingWin.ShowDialog();
                     break;
-                case "Clear":
-                    TextBoxDownload.Text = "";
+                case "通道列表":
+                    break;
+                case "版权声明":
+                    var aboutWin = new AboutWindow { Owner = this };
+                    aboutWin.ShowDialog();
+                    break;
+                case "退出":
+                    Environment.Exit(0);
                     break;
             }
-
-            ContextMenuDownload.IsOpen = ContextMenuPlayList.IsOpen = false;
         }
 
         /// <summary>
@@ -118,34 +130,21 @@ namespace VVPlayer
         public void Download(string name, string url)
         {
             TabControl.SelectedIndex = 2;
-            new Thread(start: () =>
+            var dlPath = Environment.CurrentDirectory;
+            var p = Downloader.CreateProcess(dlPath, name, url);
+            new Thread(() =>
             {
-                using (var p = new Process())
+                p.OutputDataReceived += delegate(object sender, DataReceivedEventArgs e)
                 {
-                    p.StartInfo.FileName = "vip-video-downloader.exe";
-                    p.StartInfo.Arguments = $"d -V -o {name} -t ts{name} {url}";
-                    p.StartInfo.UseShellExecute = false;
-                    p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                    p.StartInfo.CreateNoWindow = false;
-                    p.StartInfo.StandardOutputEncoding = Encoding.UTF8;
-                    p.StartInfo.RedirectStandardOutput = true;
-                    p.Start();
-
-                    var reader = p.StandardOutput;
-                    while (true)
+                    var m = e.Data;
+                    if (!string.IsNullOrEmpty(m))
                     {
-                        var line = reader.ReadLineAsync().Result;
-                        if (line == null) break;
-                        Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            TextBoxDownload.Text += line + "\n";
-                            ScrollViewer.ScrollToEnd();
-                        }));
+                        Dispatcher.InvokeAsync(() => { AppendLog(m); });
                     }
-
-                    p.WaitForExit();
-                    p.Dispose();
-                }
+                };
+                p.Start();
+                p.BeginOutputReadLine();
+                p.BeginErrorReadLine();
             }).Start();
         }
 
@@ -222,40 +221,39 @@ namespace VVPlayer
             }
         }
 
-        private void TextBoxDL_OnSelectionChanged(object sender, RoutedEventArgs e)
-        {
-            var txt = (sender as TextBox)?.SelectedText;
-            MenuItemCopy.IsEnabled = !string.IsNullOrEmpty(txt);
-        }
-
-        private void ContextMenu_OnOpened(object sender, RoutedEventArgs e)
-        {
-            MenuItemClear.IsEnabled = TextBoxDownload.Text != string.Empty;
-        }
-
         public MainWindow()
         {
             InitializeComponent();
             ListViewChannel.SelectionChanged += ListViewChannelOnSelectionChanged;
-
             WebViewSearch.CoreWebView2InitializationCompleted += delegate
             {
                 WebViewSearch.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
                 WebViewSearch.CoreWebView2.Settings.AreDevToolsEnabled = true;
-
+                WebViewSearch.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(@"
+if(location.href.indexOf('so.iqiyi.com') != -1){
+    var linkNodes  = document.querySelectorAll('a.qy-mod-link');
+    linkNodes.forEach(linkNode =>{
+        linkNode.replaceWith(linkNode.cloneNode(true));
+    });
+}
+");
                 WebViewSearch.CoreWebView2.NewWindowRequested += async
                     delegate(object sender, CoreWebView2NewWindowRequestedEventArgs e)
                 {
                     var uri = e.Uri;
-                    if (string.IsNullOrEmpty(uri) || !IsVideoUri(uri))
+                    if (string.IsNullOrEmpty(uri))
+                    {
+                        return;
+                    }
+
+                    e.Handled = true;
+                    if (!IsVideoUri(uri))
                     {
                         return;
                     }
 
                     AppendLog(uri);
-                    e.Handled = true;
                     var videoName = await GetVideoName(uri);
-
                     var chooseWindow = new ChooseWindow(videoName, e.Uri)
                     {
                         Owner = this
@@ -264,21 +262,6 @@ namespace VVPlayer
                 };
             };
 
-            ButtonBrowse.Click += delegate
-            {
-                var fbd = new FolderBrowserDialog();
-                fbd.ShowNewFolderButton = true;
-                fbd.Description = @"下载文件保存路径";
-                var sd = fbd.ShowDialog();
-                if (sd == System.Windows.Forms.DialogResult.OK)
-                {
-                    var selectPath = fbd.SelectedPath;
-                    if (!string.IsNullOrEmpty(selectPath))
-                    {
-                        TextBoxDownloadPath.Text = selectPath;
-                    }
-                }
-            };
 
             LoadPlatforms();
             LoadChannels();
@@ -292,14 +275,15 @@ namespace VVPlayer
 
         private async Task<string> GetVideoName(string uri)
         {
-            string videoName = null;
+            var videoName = "";
+            var vUri = uri.Replace("https:", "").Replace("http:", "");
+            var getJs = "";
             switch (CbxType.SelectedIndex)
             {
-                case 0:
-                    var ykUri = uri.Replace("https:", "").Replace("http:", "");
+                case 0: // 优酷
 
                     //兼容：https://v.youku.com/v_show/id_XNTg0NzEyODIyNA==.html
-                    var getJs = $"document.querySelector('a[href=\"{ykUri}\"]').parentElement.title.replaceAll(' ','')";
+                    getJs = $"document.querySelector('a[href=\"{vUri}\"]').parentElement.title.replaceAll(' ','')";
                     videoName = await WebViewSearch.CoreWebView2.ExecuteScriptAsync(getJs);
                     videoName = videoName?.Trim('\"');
                     AppendLog($"GetVideoName getJs[{getJs}] videoName[{videoName}]");
@@ -307,11 +291,21 @@ namespace VVPlayer
                     {
                         //兼容：https://v.youku.com/v_nextstage/id_fdcd70c72b0740d68709.html
                         getJs =
-                            $"JSON.parse(document.querySelector('a[href=\"{ykUri}\"]').getAttribute(\"data-trackinfo\")).object_title";
+                            $"JSON.parse(document.querySelector('a[href=\"{vUri}\"]').getAttribute(\"data-trackinfo\")).object_title";
                         videoName = await WebViewSearch.CoreWebView2.ExecuteScriptAsync(getJs);
                         videoName = videoName?.Trim('\"');
                         AppendLog($"GetVideoName getJs[{getJs}] videoName[{videoName}]");
                     }
+
+                    break;
+
+                case 1: // 爱奇艺
+
+                    //兼容：https://www.iqiyi.com/v_2g3kscvft04.html
+                    getJs = $"document.querySelector('a[href=\"{vUri}\"]').title";
+                    videoName = await WebViewSearch.CoreWebView2.ExecuteScriptAsync(getJs);
+                    videoName = videoName?.Trim('\"');
+                    AppendLog($"GetVideoName getJs[{getJs}] videoName[{videoName}]");
 
                     break;
             }
@@ -323,6 +317,8 @@ namespace VVPlayer
         private bool IsVideoUri(string uri)
         {
             return uri.Contains("v.youku.com/v_show/id_") || uri.Contains("v.youku.com/v_nextstage/id") // 优酷视频
+                                                          || uri.Contains("www.iqiyi.com/v_") // 爱奇艺
+                                                          || uri.Contains("v.qq.com/x/cover/") // 腾讯视频
                 ;
         }
 

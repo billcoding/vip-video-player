@@ -1,0 +1,37 @@
+﻿<Window x:Class="VVPlayer.DownloadSettingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        Title="vip-video-player - 下载设置" Height="250" Width="600" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" WindowStyle="SingleBorderWindow">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="4*" />
+        </Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="4*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <Label Content="下载地址：" VerticalContentAlignment="Center"></Label>
+            <TextBox Grid.Column="1" Name="TextBoxDownloadPath" IsEnabled="False" VerticalContentAlignment="Center"></TextBox>
+            <Button Grid.Column="2" Name="ButtonBrowse" Click="Button_OnClick" Content="浏览..." VerticalContentAlignment="Center"></Button>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="8*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <Label Content="下载器：" VerticalContentAlignment="Center"></Label>
+            <TextBox Grid.Column="1" Name="TextBoxDownloaderExecPath" IsEnabled="False" VerticalContentAlignment="Center"></TextBox>
+            <Button Grid.Column="2" Name="ButtonInstall" Click="Button_OnClick" Content="下载" VerticalContentAlignment="Center"></Button>
+            <Button Grid.Column="3" Name="ButtonSetup" Click="Button_OnClick" Content="浏览..." VerticalContentAlignment="Center"></Button>
+        </Grid>
+    </Grid>
+</Window>

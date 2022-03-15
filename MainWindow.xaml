@@ -5,9 +5,21 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
-        Title="vip-video-player" Height="480" Width="600" WindowState="Normal" WindowStartupLocation="CenterScreen">
+        Title="vip-video-player" Height="680" Width="960" WindowState="Maximized" WindowStartupLocation="CenterScreen">
 
     <DockPanel Margin="5">
+
+        <!-- 菜单 -->
+        <StackPanel DockPanel.Dock="Top">
+            <Menu>
+                <MenuItem Header="管理">
+                    <MenuItem Header="下载设置" Click="MenuItem_OnClick2" />
+                    <MenuItem Header="通道列表" Click="MenuItem_OnClick2" />
+                    <MenuItem Header="版权声明" Click="MenuItem_OnClick2" />
+                    <MenuItem Header="退出" Click="MenuItem_OnClick2" />
+                </MenuItem>
+            </Menu>
+        </StackPanel>
 
         <!-- 搜索框 -->
         <Grid DockPanel.Dock="Top">
@@ -20,16 +32,16 @@
         </Grid>
 
         <!-- 通道 -->
-        <GroupBox Header="通道区" DockPanel.Dock="Left">
+        <GroupBox Header="通道区" DockPanel.Dock="Right">
             <ListView Name="ListViewChannel" SelectedIndex="0" SelectionMode="Single"></ListView>
         </GroupBox>
 
         <!-- 播放列表 -->
-        <GroupBox Header="播放列表" DockPanel.Dock="Right">
+        <GroupBox Header="播放列表" DockPanel.Dock="Left">
             <ListView Name="ListViewPlayList" SelectedIndex="0" SelectionMode="Single"
                       ContextMenuOpening="ListViewPlayList_OnContextMenuOpening">
                 <ListView.ContextMenu>
-                    <ContextMenu Name="ContextMenuPlayList">
+                    <ContextMenu>
                         <MenuItem Header="播放" Click="MenuItem_OnClick" />
                         <MenuItem Header="删除" Click="MenuItem_OnClick" />
                         <MenuItem Header="下载" Click="MenuItem_OnClick" />
@@ -49,36 +61,13 @@
                 <!-- 播放器 -->
                 <wv2:WebView2 Name="WebViewPlayer" />
             </TabItem>
-            <TabItem Header="下载">
-                <ScrollViewer Name="ScrollViewer">
-                    <TextBox Name="TextBoxDownload" IsReadOnly="True" SelectionChanged="TextBoxDL_OnSelectionChanged">
-                        <TextBox.ContextMenu>
-                            <ContextMenu Name="ContextMenuDownload" Opened="ContextMenu_OnOpened">
-                                <MenuItem Header="Copy" Name="MenuItemCopy" IsEnabled="False"
-                                          Click="MenuItem_OnClick" />
-                                <MenuItem Header="Clear" Name="MenuItemClear" IsEnabled="False"
-                                          Click="MenuItem_OnClick" />
-                            </ContextMenu>
-                        </TextBox.ContextMenu>
-                    </TextBox>
+            <TabItem Header="Log">
+                <ScrollViewer>
+                    <ListView Name="ListViewLog"></ListView>
                 </ScrollViewer>
             </TabItem>
-            <TabItem Header="Log">
-                <ListView Name="ListViewLog"></ListView>
-            </TabItem>
-            <TabItem Header="设置">
-                <StackPanel>
-                    <GroupBox Header="下载">
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="下载地址：" VerticalContentAlignment="Center"></Label>
-                            <Label Width="20"></Label>
-                            <TextBox Name="TextBoxDownloadPath" IsEnabled="False" VerticalContentAlignment="Center"></TextBox>
-                            <Label Width="20"></Label>
-                            <Button Name="ButtonBrowse" Content="浏览..." VerticalContentAlignment="Center"></Button>
-                        </StackPanel>
-                    </GroupBox>
-                </StackPanel>
-            </TabItem>
         </TabControl>
+
     </DockPanel>
+
 </Window>

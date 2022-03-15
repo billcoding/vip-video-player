@@ -72,10 +72,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AboutWindow.xaml.cs">
+      <DependentUpon>AboutWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ChooseWindow.xaml.cs">
       <DependentUpon>ChooseWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DownloadSettingWindow.xaml.cs">
+      <DependentUpon>DownloadSettingWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Util\Downloader.cs" />
+    <Page Include="AboutWindow.xaml" />
     <Page Include="ChooseWindow.xaml" />
+    <Page Include="DownloadSettingWindow.xaml" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -115,9 +124,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="WebView2Runtime\MicrosoftEdgeWebview2Setup.exe" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="packages\Microsoft.Web.WebView2.1.0.1133-prerelease\build\Microsoft.Web.WebView2.targets" Condition="Exists('packages\Microsoft.Web.WebView2.1.0.1133-prerelease\build\Microsoft.Web.WebView2.targets')" />
