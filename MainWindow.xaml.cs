@@ -312,19 +312,15 @@ if(location.href.indexOf('so.iqiyi.com') != -1){
                 case 0: // 优酷
 
                     //兼容：https://v.youku.com/v_show/id_XNTg0NzEyODIyNA==.html
-                    getJs = $"document.querySelector('a[href=\"{vUri}\"]').parentElement.title.replaceAll(' ','')";
+
+                    //兼容：https://v.youku.com/v_nextstage/id_fdcd70c72b0740d68709.html
+                    getJs =
+                        $"document.querySelector('a[href=\"{vUri}\"]').parentElement.title.replaceAll(' ','')"
+                        + "||"
+                        + $"JSON.parse(document.querySelector('a[href=\"{vUri}\"]').getAttribute(\"data-trackinfo\")).object_title";
                     videoName = await WebViewSearch.CoreWebView2.ExecuteScriptAsync(getJs);
                     videoName = videoName?.Trim('\"');
                     AppendLog($"GetVideoName getJs[{getJs}] videoName[{videoName}]");
-                    if (string.IsNullOrEmpty(videoName))
-                    {
-                        //兼容：https://v.youku.com/v_nextstage/id_fdcd70c72b0740d68709.html
-                        getJs =
-                            $"JSON.parse(document.querySelector('a[href=\"{vUri}\"]').getAttribute(\"data-trackinfo\")).object_title";
-                        videoName = await WebViewSearch.CoreWebView2.ExecuteScriptAsync(getJs);
-                        videoName = videoName?.Trim('\"');
-                        AppendLog($"GetVideoName getJs[{getJs}] videoName[{videoName}]");
-                    }
 
                     break;
 
@@ -340,8 +336,12 @@ if(location.href.indexOf('so.iqiyi.com') != -1){
 
                 case 2: // 腾讯视频
 
-                    //兼容：https://v.qq.com/x/cover/
-                    
+                    //兼容：https://v.qq.com/x/cover/mzc00200rh9pv6b.html
+                    getJs = $"document.querySelector('a[href=\"{vUri}\").alt.replace(/[\x05\x06]/g,'')";
+                    videoName = await WebViewSearch.CoreWebView2.ExecuteScriptAsync(getJs);
+                    videoName = videoName?.Trim('\"');
+                    AppendLog($"GetVideoName getJs[{getJs}] videoName[{videoName}]");
+
                     break;
 
                 case 3: // 搜狐TV
