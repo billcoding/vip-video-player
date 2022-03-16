@@ -3,13 +3,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        Title="vip-video-player - 下载设置" Height="250" Width="600" ResizeMode="NoResize"
+        Title="下载设置" Height="200" Width="600" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" WindowStyle="SingleBorderWindow">
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="1*" />
+            <RowDefinition Height="4*" />
             <RowDefinition Height="1*" />
             <RowDefinition Height="4*" />
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="4*" />
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="4*" />
+            <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -19,9 +24,11 @@
             </Grid.ColumnDefinitions>
             <Label Content="下载地址：" VerticalContentAlignment="Center"></Label>
             <TextBox Grid.Column="1" Name="TextBoxDownloadPath" IsEnabled="False" VerticalContentAlignment="Center"></TextBox>
-            <Button Grid.Column="2" Name="ButtonBrowse" Click="Button_OnClick" Content="浏览..." VerticalContentAlignment="Center"></Button>
+            <Button Grid.Column="2" Tag="DirBrowse" Click="Button_OnClick" Content="浏览..."
+                    VerticalContentAlignment="Center">
+            </Button>
         </Grid>
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="8*" />
@@ -29,9 +36,33 @@
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
             <Label Content="下载器：" VerticalContentAlignment="Center"></Label>
-            <TextBox Grid.Column="1" Name="TextBoxDownloaderExecPath" IsEnabled="False" VerticalContentAlignment="Center"></TextBox>
-            <Button Grid.Column="2" Name="ButtonInstall" Click="Button_OnClick" Content="下载" VerticalContentAlignment="Center"></Button>
-            <Button Grid.Column="3" Name="ButtonSetup" Click="Button_OnClick" Content="浏览..." VerticalContentAlignment="Center"></Button>
+            <TextBox Grid.Column="1" Name="TextBoxDownloaderExecPath" IsEnabled="False"
+                     VerticalContentAlignment="Center">
+            </TextBox>
+            <Button Grid.Column="2" Tag="Install" Click="Button_OnClick" Content="下载"
+                    VerticalContentAlignment="Center">
+            </Button>
+            <Button Grid.Column="3" Tag="ExecBrowse" Click="Button_OnClick" Content="浏览..."
+                    VerticalContentAlignment="Center">
+            </Button>
+        </Grid>
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="8*" />
+            </Grid.ColumnDefinitions>
+            <Label Content="下载器版本：" VerticalContentAlignment="Center"></Label>
+            <Label Grid.Column="1" Name="LabelDownloaderVersion" VerticalContentAlignment="Center"></Label>
+        </Grid>
+        <Grid Grid.Row="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="4*" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="1" Tag="Save" Click="Button_OnClick" Content="保存"></Button>
         </Grid>
     </Grid>
 </Window>

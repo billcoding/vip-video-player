@@ -4,13 +4,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
-        Title="vip-video-player - 版权说明" Height="250" Width="600" ResizeMode="NoResize"
+        Title="版权说明" Height="250" Width="680" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" WindowStyle="SingleBorderWindow">
     <StackPanel Margin="10">
         <Label></Label>
         <Label>版权所有：2022 ©billcoding</Label>
         <Label></Label>
-        <Label>注意：本软件仅供学习使用，请勿用于非法用途，否则由使用者承担一切责任！</Label>
+        <Label>注意： 本软件仅供学习使用，请勿用于非法用途，否则由使用者承担一切责任！推荐购买视频平台VIP包月观看会员视频！</Label>
         <Label></Label>
         <Label>版本：1.0.0</Label>
         <Label></Label>

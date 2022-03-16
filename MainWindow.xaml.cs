@@ -1,22 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Forms;
 using System.Windows.Input;
 using Microsoft.Web.WebView2.Core;
 using VVPlayer.Util;
-using Clipboard = System.Windows.Clipboard;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using Label = System.Windows.Controls.Label;
 using MenuItem = System.Windows.Controls.MenuItem;
-using TextBox = System.Windows.Controls.TextBox;
 
 namespace VVPlayer
 {
@@ -27,6 +22,7 @@ namespace VVPlayer
     {
         public string CurrentVUrl = "";
         private string _currentCUrl = "";
+        public Config Cfg;
 
         private void TxtText_OnKeyDown(object sender, KeyEventArgs e)
         {
@@ -60,21 +56,18 @@ namespace VVPlayer
             var name = lbl.Content.ToString();
             CurrentVUrl = lbl.Tag.ToString();
             var menuItem = sender as MenuItem;
-            switch (menuItem?.Header.ToString())
+            switch (menuItem?.Tag.ToString())
             {
-                case "播放":
+                case "Play":
                     PlayNow();
                     break;
-                case "删除":
+                case "Delete":
                     ListViewPlayList.Items.RemoveAt(ListViewPlayList.SelectedIndex);
                     break;
-                case "下载":
+                case "Download":
                     Download(name, CurrentVUrl);
                     break;
-                case "下载全部":
-                    // Download(name, currentVUrl);
-                    break;
-                case "清空":
+                case "Clear":
                     ListViewPlayList.Items.Clear();
                     break;
             }
@@ -83,21 +76,107 @@ namespace VVPlayer
         private void MenuItem_OnClick2(object sender, RoutedEventArgs e)
         {
             var menuItem = sender as MenuItem;
-            switch (menuItem?.Header.ToString())
+            switch (menuItem?.Tag.ToString())
             {
-                case "下载设置":
+                case "DownloadSetting":
                     var dlSettingWin = new DownloadSettingWindow { Owner = this };
                     dlSettingWin.ShowDialog();
                     break;
-                case "通道列表":
-                    break;
-                case "版权声明":
+                case "Copyright":
                     var aboutWin = new AboutWindow { Owner = this };
                     aboutWin.ShowDialog();
                     break;
-                case "退出":
+                case "Exit":
                     Environment.Exit(0);
                     break;
+                case "ClearLog":
+                    ListViewLog.Items.Clear();
+                    break;
+                case "KillDownloader":
+                    try
+                    {
+                        var p = new Process
+                        {
+                            StartInfo = new ProcessStartInfo
+                            {
+                                FileName = "taskkill.exe",
+                                Arguments = "/IM vip-video-downloader.exe /F",
+                                UseShellExecute = false,
+                                CreateNoWindow = true,
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true,
+                            }
+                        };
+                        p.Start();
+                    }
+                    catch (Exception)
+                    {
+                        //
+                    }
+
+                    break;
+            }
+        }
+
+        private void ListViewPlayList_OnContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            if (ListViewPlayList.Items.Count <= 0)
+            {
+                e.Handled = true;
+            }
+        }
+
+        private async void NewWindowRequested(object sender, CoreWebView2NewWindowRequestedEventArgs e)
+        {
+            var uri = e.Uri;
+            if (string.IsNullOrEmpty(uri))
+            {
+                return;
+            }
+
+            e.Handled = true;
+            if (!IsVideoUri(uri))
+            {
+                return;
+            }
+
+            AppendLog(uri);
+            var videoName = await GetVideoName(uri);
+            var chooseWindow = new ChooseWindow(videoName, e.Uri)
+            {
+                Owner = this
+            };
+            chooseWindow.ShowDialog();
+        }
+
+        private void CoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
+        {
+            WebViewSearch.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+            WebViewSearch.CoreWebView2.Settings.AreDevToolsEnabled = true;
+            WebViewSearch.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(@"
+if(location.href.indexOf('so.iqiyi.com') != -1){
+    var linkNodes  = document.querySelectorAll('a.qy-mod-link');
+    linkNodes.forEach(linkNode =>{
+        linkNode.replaceWith(linkNode.cloneNode(true));
+    });
+}
+");
+            WebViewSearch.CoreWebView2.NewWindowRequested += NewWindowRequested;
+        }
+
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            LoadPlatforms();
+            LoadChannels();
+            ListViewChannel.SelectionChanged += ListViewChannelOnSelectionChanged;
+            WebViewSearch.CoreWebView2InitializationCompleted += CoreWebView2InitializationCompleted;
+
+            Cfg = Config.GetConfig();
+            if (Cfg == null)
+            {
+                MessageBox.Show("加载配置失败。");
             }
         }
 
@@ -111,27 +190,37 @@ namespace VVPlayer
             TabControl.SelectedIndex = 1;
         }
 
-        /// <summary>
-        /// 播放列表
-        /// </summary>
-        /// <param name="title"></param>
-        /// <param name="url"></param>
         public void PlayList(string title, string url)
         {
             var lbl = new Label { Content = title, Tag = url };
             ListViewPlayList.Items.Add(lbl);
         }
 
-        /// <summary>
-        /// 下载
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="url"></param>
         public void Download(string name, string url)
         {
+            var execPath = "";
+            var dlPath = "";
+            if (Cfg?.DownloadCfg != null && !string.IsNullOrEmpty(Cfg.DownloadCfg.DownloaderExecPath) &&
+                !string.IsNullOrEmpty(Cfg.DownloadCfg.Dir))
+            {
+                execPath = Cfg.DownloadCfg.DownloaderExecPath;
+                dlPath = Cfg.DownloadCfg.Dir;
+            }
+
+            if (string.IsNullOrEmpty(execPath))
+            {
+                MessageBox.Show("未安装下载器");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(dlPath))
+            {
+                MessageBox.Show("读取下载文件夹配置错误");
+                return;
+            }
+
             TabControl.SelectedIndex = 2;
-            var dlPath = Environment.CurrentDirectory;
-            var p = Downloader.CreateProcess(dlPath, name, url);
+            var p = Downloader.CreateProcess(execPath, dlPath, name, url);
             new Thread(() =>
             {
                 p.OutputDataReceived += delegate(object sender, DataReceivedEventArgs e)
@@ -139,7 +228,7 @@ namespace VVPlayer
                     var m = e.Data;
                     if (!string.IsNullOrEmpty(m))
                     {
-                        Dispatcher.InvokeAsync(() => { AppendLog(m); });
+                        Dispatcher.InvokeAsync(() => AppendLog(m));
                     }
                 };
                 p.Start();
@@ -148,9 +237,6 @@ namespace VVPlayer
             }).Start();
         }
 
-        /// <summary>
-        /// 加载平台
-        /// </summary>
         private void LoadPlatforms()
         {
             CbxType.Items.Add(new ComboBoxItem
@@ -174,34 +260,22 @@ namespace VVPlayer
             });
         }
 
-        /// <summary>
-        /// 加载通道
-        /// </summary>
         private void LoadChannels()
         {
-            var chs = new List<string>();
-            if (File.Exists("channels.txt"))
+            var chs = new List<string>
             {
-                chs.AddRange(File.ReadAllLines("channels.txt"));
-            }
-            else
-            {
-                chs.AddRange(new List<string>
-                {
-                    "https://jx.parwix.com:4433/player/?url=",
-                    "http://42.193.18.62:9999/?url=",
-                    "https://www.1717yun.com/jx/ty.php?url=",
-                    "https://okjx.cc/?url=",
-                    "https://www.ckmov.vip/api.php?url=",
-                    "https://z1.m1907.cn/?jx=",
-                    "https://ckmov.ccyjjd.com/ckmov/?url=",
-                    "https://v.znb.me/?url=",
-                    "https://123.1dior.cn/?url=",
-                    "https://www.h8jx.com/jiexi.php?url=",
-                    "https://www.ckplayer.vip/jiexi/?url="
-                });
-            }
-
+                "https://jx.parwix.com:4433/player/?url=",
+                "http://42.193.18.62:9999/?url=",
+                "https://www.1717yun.com/jx/ty.php?url=",
+                "https://okjx.cc/?url=",
+                "https://www.ckmov.vip/api.php?url=",
+                "https://z1.m1907.cn/?jx=",
+                "https://ckmov.ccyjjd.com/ckmov/?url=",
+                "https://v.znb.me/?url=",
+                "https://123.1dior.cn/?url=",
+                "https://www.h8jx.com/jiexi.php?url=",
+                "https://www.ckplayer.vip/jiexi/?url="
+            };
             var i = 0;
             foreach (var lbl in from c in chs
                      let cc = c.Trim()
@@ -221,56 +295,11 @@ namespace VVPlayer
             }
         }
 
-        public MainWindow()
-        {
-            InitializeComponent();
-            ListViewChannel.SelectionChanged += ListViewChannelOnSelectionChanged;
-            WebViewSearch.CoreWebView2InitializationCompleted += delegate
-            {
-                WebViewSearch.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-                WebViewSearch.CoreWebView2.Settings.AreDevToolsEnabled = true;
-                WebViewSearch.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(@"
-if(location.href.indexOf('so.iqiyi.com') != -1){
-    var linkNodes  = document.querySelectorAll('a.qy-mod-link');
-    linkNodes.forEach(linkNode =>{
-        linkNode.replaceWith(linkNode.cloneNode(true));
-    });
-}
-");
-                WebViewSearch.CoreWebView2.NewWindowRequested += async
-                    delegate(object sender, CoreWebView2NewWindowRequestedEventArgs e)
-                {
-                    var uri = e.Uri;
-                    if (string.IsNullOrEmpty(uri))
-                    {
-                        return;
-                    }
-
-                    e.Handled = true;
-                    if (!IsVideoUri(uri))
-                    {
-                        return;
-                    }
-
-                    AppendLog(uri);
-                    var videoName = await GetVideoName(uri);
-                    var chooseWindow = new ChooseWindow(videoName, e.Uri)
-                    {
-                        Owner = this
-                    };
-                    chooseWindow.ShowDialog();
-                };
-            };
-
-
-            LoadPlatforms();
-            LoadChannels();
-        }
-
         private void AppendLog(string log)
         {
             var logStr = $"[{DateTime.Now:s}] {log}";
             ListViewLog.Items.Add(new Label { Content = logStr });
+            ScrollViewer.ScrollToEnd();
         }
 
         private async Task<string> GetVideoName(string uri)
@@ -308,6 +337,24 @@ if(location.href.indexOf('so.iqiyi.com') != -1){
                     AppendLog($"GetVideoName getJs[{getJs}] videoName[{videoName}]");
 
                     break;
+
+                case 2: // 腾讯视频
+
+                    //兼容：https://v.qq.com/x/cover/
+                    
+                    break;
+
+                case 3: // 搜狐TV
+
+                    break;
+
+                case 4: // 芒果TV
+
+                    break;
+
+                case 5: // 乐视视频
+
+                    break;
             }
 
             return videoName;
@@ -320,14 +367,6 @@ if(location.href.indexOf('so.iqiyi.com') != -1){
                                                           || uri.Contains("www.iqiyi.com/v_") // 爱奇艺
                                                           || uri.Contains("v.qq.com/x/cover/") // 腾讯视频
                 ;
-        }
-
-        private void ListViewPlayList_OnContextMenuOpening(object sender, ContextMenuEventArgs e)
-        {
-            if (ListViewPlayList.Items.Count <= 0)
-            {
-                e.Handled = true;
-            }
         }
     }
 }

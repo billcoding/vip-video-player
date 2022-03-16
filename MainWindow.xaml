@@ -12,12 +12,10 @@
         <!-- 菜单 -->
         <StackPanel DockPanel.Dock="Top">
             <Menu>
-                <MenuItem Header="管理">
-                    <MenuItem Header="下载设置" Click="MenuItem_OnClick2" />
-                    <MenuItem Header="通道列表" Click="MenuItem_OnClick2" />
-                    <MenuItem Header="版权声明" Click="MenuItem_OnClick2" />
-                    <MenuItem Header="退出" Click="MenuItem_OnClick2" />
-                </MenuItem>
+                <MenuItem Header="下载设置" Height="30" Tag="DownloadSetting" Click="MenuItem_OnClick2" />
+                <MenuItem Header="版权声明" Height="30" Tag="Copyright" Click="MenuItem_OnClick2" />
+                <MenuItem Header="退出" Height="30" Tag="Exit" Click="MenuItem_OnClick2" />
+                <MenuItem Foreground="Red" Header="关闭后台下载任务" Height="30" Tag="KillDownloader" Click="MenuItem_OnClick2" />
             </Menu>
         </StackPanel>
 
@@ -42,28 +40,33 @@
                       ContextMenuOpening="ListViewPlayList_OnContextMenuOpening">
                 <ListView.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="播放" Click="MenuItem_OnClick" />
-                        <MenuItem Header="删除" Click="MenuItem_OnClick" />
-                        <MenuItem Header="下载" Click="MenuItem_OnClick" />
-                        <MenuItem Header="下载全部" Click="MenuItem_OnClick" />
-                        <MenuItem Header="清空" Click="MenuItem_OnClick" />
+                        <MenuItem Header="播放" Tag="Play" Click="MenuItem_OnClick" />
+                        <MenuItem Header="删除" Tag="Delete" Click="MenuItem_OnClick" />
+                        <MenuItem Header="下载" Tag="Download" Click="MenuItem_OnClick" />
+                        <MenuItem Header="清空" Tag="Clear" Click="MenuItem_OnClick" />
                     </ContextMenu>
                 </ListView.ContextMenu>
             </ListView>
         </GroupBox>
 
         <TabControl Name="TabControl" DockPanel.Dock="Bottom">
-            <TabItem Header="搜索">
+            <TabItem Header="         搜索         ">
                 <!-- 搜索 -->
                 <wv2:WebView2 Name="WebViewSearch" />
             </TabItem>
-            <TabItem Header="播放">
+            <TabItem Header="         播放         ">
                 <!-- 播放器 -->
                 <wv2:WebView2 Name="WebViewPlayer" />
             </TabItem>
-            <TabItem Header="Log">
-                <ScrollViewer>
-                    <ListView Name="ListViewLog"></ListView>
+            <TabItem Header="         日志         ">
+                <ScrollViewer Name="ScrollViewer">
+                    <ListView Name="ListViewLog">
+                        <ListView.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="清空" Tag="ClearLog" Click="MenuItem_OnClick2"></MenuItem>
+                            </ContextMenu>
+                        </ListView.ContextMenu>
+                    </ListView>
                 </ScrollViewer>
             </TabItem>
         </TabControl>
